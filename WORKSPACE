@@ -31,3 +31,32 @@ http_archive(
   urls = ["https://github.com/abseil/abseil-cpp/archive/04610889a913d29037205ca72e9d7fd7acc925fe.zip"],
   strip_prefix = "abseil-cpp-04610889a913d29037205ca72e9d7fd7acc925fe",
 )
+
+_ALL_CONTENT = """\
+cc_library(
+    name = "glaze",
+    hdrs = glob(["include/glaze/**/*.hpp"]),
+    includes = ["include"],
+    linkstatic = True,
+    visibility = ["//visibility:public"],
+)
+
+
+"""
+
+#http_archive(
+#    name = "glaze",
+#    build_file_content = _ALL_CONTENT,
+#    strip_prefix = "glaze-1.5.7",
+#    urls = [
+#        "https://github.com/stephenberry/glaze/archive/refs/tags/v1.5.7.tar.gz",
+#    ],
+#)
+
+
+git_repository(
+    name = "glaze",
+    remote = "https://github.com/stephenberry/glaze",
+    branch = "main",
+    build_file_content = _ALL_CONTENT,
+)

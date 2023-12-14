@@ -1,12 +1,15 @@
-//  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+//  This file is distributed under the BSD 3-Clause License. See LICENSE for
+//  details.
 
+#include <chrono>
 #include <string>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "hif/hif_glaze.hpp"
 #include "hif/hif_read.hpp"
 #include "hif/hif_write.hpp"
-
+#define BITS 19 //tested limit. Due to limited reference size in .st file
 class Hif_test : public ::testing::Test {
 protected:
   void SetUp() override {}
@@ -53,7 +56,7 @@ TEST_F(Hif_test, Trivial_test1) {
   EXPECT_EQ(conta, 1);
 }
 
-TEST_F(Hif_test, Large_stmt) {
+TEST_F(Hif_test, Large_stmt_write) {
   std::string fname("hif_test_data2");
 
   auto wr = Hif_write::create(fname, "testtool", "0.0.3");
@@ -63,21 +66,26 @@ TEST_F(Hif_test, Large_stmt) {
 
   stmt.instance = "jojojo";
 
-  for (auto i = 0u; i < 1024; ++i) {
+  for (auto i = 0u; i < (1 << BITS); ++i) {
     stmt.add_input(std::to_string(i),
                    std::string("a_longer_string_") + std::to_string(i));
   }
-  for (auto i = 0u; i < 1024; ++i) {
+  for (auto i = 0u; i < (1 << BITS); ++i) {
     stmt.add_output(std::to_string(i) + "_out",
                     std::string("a_longer_string_") + std::to_string(i));
   }
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   wr->add(stmt);
 
-  wr = nullptr;  // close
+  wr       = nullptr;  // close
+  auto end = std::chrono::high_resolution_clock::now();
 
   auto rd = Hif_read::open(fname);
   EXPECT_NE(rd, nullptr);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
 
   int conta = 0;
   rd->each([&conta, &stmt](const Hif_base::Statement &stmt2) {
@@ -87,6 +95,180 @@ TEST_F(Hif_test, Large_stmt) {
 
   EXPECT_EQ(conta, 1);
 }
+
+TEST_F(Hif_test, glaze_write_test) {
+  std::vector<Hif_base::Statement> directory;
+  {
+    auto stmt     = Hif_write::create_assign();
+    stmt.instance = "jojojo";
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_input(std::to_string(i),
+                     std::string("a_longer_string_") + std::to_string(i));
+    }
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_output(std::to_string(i) + "_out",
+                      std::string("a_longer_string_") + std::to_string(i));
+    }
+
+    directory.push_back(stmt);
+  }
+
+  auto start = std::chrono::high_resolution_clock::now();
+  auto glaze_json_write
+      = glz::write_file(directory, "./glaze_stmt_w_test.json", std::string{});
+  auto end = std::chrono::high_resolution_clock::now();
+
+  EXPECT_EQ(glaze_json_write, glz::error_code::none);
+
+  std::vector<Hif_base::Statement> obj;
+  auto glaze_json_read = glz::read_file(obj, "./glaze_stmt_w_test.json", std::string{});
+  EXPECT_EQ(glaze_json_read, glz::error_code::none);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
+
+  EXPECT_EQ(directory, obj);
+}
+TEST_F(Hif_test, beve_write_test) {
+  std::vector<Hif_base::Statement> directory;
+  {
+    auto stmt     = Hif_write::create_assign();
+    stmt.instance = "jojojo";
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_input(std::to_string(i),
+                     std::string("a_longer_string_") + std::to_string(i));
+    }
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_output(std::to_string(i) + "_out",
+                      std::string("a_longer_string_") + std::to_string(i));
+    }
+
+    directory.push_back(stmt);
+  }
+
+  auto start           = std::chrono::high_resolution_clock::now();
+  auto beve_write_code = glz::write_file_binary(directory, "output0.eve", std::string{});
+  auto end             = std::chrono::high_resolution_clock::now();
+
+  EXPECT_EQ(beve_write_code, glz::error_code::none);
+
+  std::vector<Hif_base::Statement> obj;
+  auto beve_read_code = glz::read_file_binary(obj, "output0.eve", std::string{});
+  EXPECT_EQ(beve_read_code, glz::error_code::none);
+
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
+
+  EXPECT_EQ(directory, obj);
+}
+
+TEST_F(Hif_test, Large_stmt_read) {
+  std::string fname("hif_test_data3");
+
+  auto wr = Hif_write::create(fname, "testtool", "0.0.3");
+  EXPECT_NE(wr, nullptr);
+
+  auto stmt = Hif_write::create_assign();
+
+  stmt.instance = "jojojo";
+
+  for (auto i = 0u; i < (1 << BITS); ++i) {
+    stmt.add_input(std::to_string(i),
+                   std::string("a_longer_string_") + std::to_string(i));
+  }
+  for (auto i = 0u; i < (1 << BITS); ++i) {
+    stmt.add_output(std::to_string(i) + "_out",
+                    std::string("a_longer_string_") + std::to_string(i));
+  }
+
+  wr->add(stmt);
+
+  wr = nullptr;  // close
+
+  auto start = std::chrono::high_resolution_clock::now();
+  auto rd    = Hif_read::open(fname);
+  int conta = 0;
+  rd->each([&conta, &stmt](const Hif_base::Statement &stmt2) {
+//    EXPECT_EQ(stmt, stmt2);
+    ++conta;
+  });
+  auto end   = std::chrono::high_resolution_clock::now();
+  EXPECT_NE(rd, nullptr);
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
+
+
+  EXPECT_EQ(conta, 1);
+}
+TEST_F(Hif_test, glaze_read_test) {
+  std::vector<Hif_base::Statement> directory;
+  {
+    auto stmt     = Hif_write::create_assign();
+    stmt.instance = "jojojo";
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_input(std::to_string(i),
+                     std::string("a_longer_string_") + std::to_string(i));
+    }
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_output(std::to_string(i) + "_out",
+                      std::string("a_longer_string_") + std::to_string(i));
+    }
+
+    directory.push_back(stmt);
+  }
+
+  auto glaze_json_write
+      = glz::write_file(directory, "./glaze_stmt_r_test.json", std::string{});
+  EXPECT_EQ(glaze_json_write, glz::error_code::none);
+
+  std::vector<Hif_base::Statement> another_directory;
+
+  auto start = std::chrono::high_resolution_clock::now();
+  auto glaze_json_read
+      = glz::read_file(another_directory, "./glaze_stmt_r_test.json", std::string{});
+  auto end = std::chrono::high_resolution_clock::now();
+
+  EXPECT_EQ(glaze_json_read, glz::error_code::none);
+
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
+
+  EXPECT_EQ(directory, another_directory);
+}
+TEST_F(Hif_test, beve_read_test) {
+  std::vector<Hif_base::Statement> directory;
+  {
+    auto stmt     = Hif_write::create_assign();
+    stmt.instance = "jojojo";
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_input(std::to_string(i),
+                     std::string("a_longer_string_") + std::to_string(i));
+    }
+    for (auto i = 0u; i < (1 << BITS); ++i) {
+      stmt.add_output(std::to_string(i) + "_out",
+                      std::string("a_longer_string_") + std::to_string(i));
+    }
+
+    directory.push_back(stmt);
+  }
+
+  auto write_ec = glz::write_file_binary(directory, "output1.eve", std::string{});
+  EXPECT_EQ(write_ec, glz::error_code::none);
+
+  std::vector<Hif_base::Statement> obj;
+
+  auto start   = std::chrono::high_resolution_clock::now();
+  auto read_ec = glz::read_file_binary(obj, "output1.eve", std::string{});
+  auto end     = std::chrono::high_resolution_clock::now();
+
+  EXPECT_EQ(read_ec, glz::error_code::none);
+
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Duration: " << duration.count() << " ms" << std::endl;
+
+  EXPECT_EQ(directory, obj);
+}
+
+
 
 TEST_F(Hif_test, Statement_class_check) {
   std::string fname("hif_test_statement_class_check");

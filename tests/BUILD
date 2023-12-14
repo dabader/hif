@@ -6,6 +6,7 @@ cc_test(
     deps = [
       "//hif",
         "@com_google_googletest//:gtest_main",
+	"@glaze//:glaze",
     ],
 )
 

@@ -60,6 +60,8 @@ public:
     Tuple_entry(bool i, std::string_view l, std::string_view r, ID_cat lc, ID_cat rc)
         : input(i), lhs(l), rhs(r), lhs_cat(lc), rhs_cat(rc) {}
 
+    Tuple_entry() = default;
+
     bool        input;
     std::string lhs;
     std::string rhs;
@@ -275,3 +277,5 @@ public:
 protected:
   Hif_base() {}
 };
+
+

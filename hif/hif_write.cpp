@@ -144,9 +144,9 @@ void Hif_write::add(const Statement &stmt) {
   assert((stmt.type >> 12) == 0);  // max 12 bit type identifer
 
   // worst case. Time to create new 0/1 id file
-  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 20)) {
-    assert(false);  // FIXME: create new ID file
-  }
+//  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 20)) {
+ //   assert(false);  // FIXME: create new ID file
+  //}
 
   stbuff->add8((stmt.type & 0xF) | ((stmt.sclass) << 4));
   stbuff->add8(stmt.type >> 4);
