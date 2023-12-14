@@ -267,10 +267,10 @@ uint8_t *Hif_read::read_te(uint8_t *ptr, uint8_t *ptr_end, std::vector<Tuple_ent
     if (small) {
       ptr += 1;
     } else {
-      uint32_t pos2 = *(uint32_t *)(ptr + 1);
+      uint32_t pos2 = *(uint16_t *)(ptr + 1);
       pos2 <<= 5; // (8 - 3);  // 3 bits used for small + ee
       pos |= pos2;
-      ptr += 5;
+      ptr += 3;
     }
 
 
@@ -359,20 +359,19 @@ uint8_t *Hif_read::read_header(uint8_t *ptr, uint8_t *ptr_end, Statement &stmt) 
 
 bool Hif_read::next_stmt() {
   if (ptr >= ptr_end) {
-		filepos++;
- 		if(filepos >= idflist.size()) {
-			return false;
-		} else {
-			munmap(ptr_base, ptr_size);
-			close(ptr_fd);
-			read_idfile(idflist[filepos]);
-			std::tie(ptr_base, ptr_size, ptr_fd) = open_file(stflist[filepos]);
-			ptr     = ptr_base;
-			ptr_end = ptr_base + ptr_size;
-			std::cout << "Opening new file" << std::endl;
-
-		}
-	}
+    filepos++;
+    if(filepos >= idflist.size()) {
+      return false;
+    } else {
+        munmap(ptr_base, ptr_size);
+        close(ptr_fd);
+        read_idfile(idflist[filepos]);
+        std::tie(ptr_base, ptr_size, ptr_fd) = open_file(stflist[filepos]);
+        ptr     = ptr_base;
+        ptr_end = ptr_base + ptr_size;
+        std::cout << "Opening new file" << std::endl;
+    }
+  }
 
   cur_stmt = Statement();
 

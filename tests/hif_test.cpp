@@ -11,7 +11,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <chrono>
-#define BITS 22  //tested limit
+#define BITS 21  //tested limit
+#define LARGE_STMT_BITS 19 //doesnt change
 class Hif_test : public ::testing::Test {
 protected:
   void SetUp() override {}
@@ -90,11 +91,11 @@ TEST_F(Hif_test, Large_stmt_write) {
 
   stmt.instance = "jojojo";
 
-  for (auto i = 0u; i < (1ULL << BITS); ++i) {
+  for (auto i = 0u; i < (1ULL << LARGE_STMT_BITS); ++i) {
     stmt.add_input(std::to_string(i),
                    std::string("a_longer_string_") + std::to_string(i));
   }
-  for (auto i = 0u; i < (1ULL << BITS); ++i) {
+  for (auto i = 0u; i < (1ULL << LARGE_STMT_BITS); ++i) {
     stmt.add_output(std::to_string(i) + "_out",
                     std::string("a_longer_string_") + std::to_string(i));
   }

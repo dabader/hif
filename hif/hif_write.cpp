@@ -100,7 +100,7 @@ void Hif_write::write_idref(uint8_t ee, Hif_base::ID_cat ttt, std::string_view t
     stbuff->add8(ref | 1);  // small
   } else {
     stbuff->add8(ref);
-    stbuff->add32(ref >> 8); //added 16 bits to reference to fix large file issue
+    stbuff->add16(ref >> 8); 
   }
 }
 
@@ -146,9 +146,17 @@ void Hif_write::add(const Statement &stmt) {
   assert((stmt.type >> 12) == 0);  // max 12 bit type identifer
 
   // worst case. Time to create new 0/1 id file
-//  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 19)) {
+  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 19)) {
 //    assert(false);  // FIXME: create new ID file
-//  }
+    if((2 * stmt.io.size() + 2 * stmt.attr.size()) > (1 <<19)) {
+        assert(false); //statement size too large
+    }
+    stbuff = File_write::create(sname + "/" + std::to_string(files_written) + ".st");
+    idbuff = File_write::create(sname + "/" + std::to_string(files_written) + ".id");
+    id2pos.clear();
+    files_written++;
+
+  }
 
   stbuff->add8((stmt.type & 0xF) | ((stmt.sclass) << 4));
   stbuff->add8(stmt.type >> 4);
