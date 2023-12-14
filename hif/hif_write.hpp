@@ -49,6 +49,9 @@ protected:
 
   std::shared_ptr<File_write> stbuff;
   std::shared_ptr<File_write> idbuff;
+  int statements_written;
+  int files_written;
+  std::string sname;
 
   struct id_entry {
     Hif_base::ID_cat ttt;

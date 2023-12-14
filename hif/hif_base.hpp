@@ -68,6 +68,7 @@ public:
     ID_cat      lhs_cat;  // Either String or Net (net in output, string in input)
     ID_cat      rhs_cat;
 
+
     bool operator==(const Tuple_entry &r) const {
       return input == r.input && lhs == r.lhs && rhs == r.rhs && lhs_cat == r.lhs_cat
              && rhs_cat == r.rhs_cat;
@@ -246,6 +247,8 @@ public:
       return sclass == rhs.sclass && instance == rhs.instance && type == rhs.type
              && io == rhs.io && attr == rhs.attr;
     }
+    friend std::ostream& operator<<(std::ostream& os, const Hif_base::Statement& obj);
+    friend std::ostream& operator<<(std::ostream& os, const Hif_base::Tuple_entry& entry);
 
     bool is_node() const { return sclass == Statement_class::Node; }
     bool is_assign() const { return sclass == Statement_class::Assign; }
@@ -279,3 +282,28 @@ protected:
 };
 
 
+inline std::string ToString(Hif_base::Statement_class sclass) {
+    switch (sclass) {
+        case Hif_base::Node:         return "Node";
+        case Hif_base::Assign:       return "Assign";
+        case Hif_base::Attr:         return "Attr";
+        case Hif_base::Open_call:    return "Open_call";
+        case Hif_base::Closed_call:  return "Closed_call";
+        case Hif_base::Open_def:     return "Open_def";
+        case Hif_base::Closed_def:   return "Closed_def";
+        case Hif_base::End:          return "End";
+        case Hif_base::Use:          return "Use";
+        default:           return "Unknown";
+    }
+}
+
+inline std::string ToString(Hif_base::ID_cat ttt) {
+    switch (ttt) {
+        case Hif_base::String_cat:         return "String_cat";
+        case Hif_base::Base2_cat:       return "Base2_cat";
+        case Hif_base::Base3_cat:         return "Base3_cat";
+        case Hif_base::Base4_cat:    return "Base4_cat";
+        case Hif_base::Custom_cat:  return "Custom_cat";
+        default:           return "Unknown";
+    }
+}

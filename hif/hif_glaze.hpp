@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "hif_base.hpp"
@@ -20,6 +19,19 @@ struct glz::meta<Hif_base::Statement>
 {
    using T = Hif_base::Statement;
    static constexpr auto value = object("sclass", &T::sclass, "instance", &T::instance, "io", &T::io, "attr", &T::attr);
+};
+
+template <>
+struct glz::meta<Hif_base::Common_base>
+{
+  using T = Hif_base::Common_base;
+  static constexpr auto value = object("data", &T::data, "size", &T::size);
+};
+template <>
+struct glz::meta<Hif_base::Base2>
+{
+  using T = Hif_base::Base2;
+  static constexpr auto value = object("data", &T::data, "size", &T::size);
 };
 template <>
 struct glz::meta<Hif_base::ID_cat> {

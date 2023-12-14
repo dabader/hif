@@ -23,7 +23,7 @@ std::shared_ptr<Hif_write> Hif_write::create(std::string_view fname,
 
 Hif_write::Hif_write(std::string_view fname, std::string_view tool,
                      std::string_view version) {
-  std::string sname(fname.data(), fname.size());
+  sname = std::string(fname.data(), fname.size());
 
   const char *path = sname.c_str();
 
@@ -62,6 +62,8 @@ Hif_write::Hif_write(std::string_view fname, std::string_view tool,
 
   stbuff = File_write::create(sname + "/" + "0.st");
   idbuff = File_write::create(sname + "/" + "0.id");
+  statements_written = 0;
+  files_written = 1;
 
   {
     auto conf_stmt = Hif_write::create_attr();
@@ -79,7 +81,7 @@ void Hif_write::write_idref(uint8_t ee, Hif_base::ID_cat ttt, std::string_view t
 #else
   std::string txt(txt_.data(), txt_.size());
 #endif
-
+ 
   auto it = id2pos.find(txt);
 
   uint32_t pos;
@@ -98,7 +100,7 @@ void Hif_write::write_idref(uint8_t ee, Hif_base::ID_cat ttt, std::string_view t
     stbuff->add8(ref | 1);  // small
   } else {
     stbuff->add8(ref);
-    stbuff->add16(ref >> 8);
+    stbuff->add32(ref >> 8); //added 16 bits to reference to fix large file issue
   }
 }
 
@@ -144,9 +146,9 @@ void Hif_write::add(const Statement &stmt) {
   assert((stmt.type >> 12) == 0);  // max 12 bit type identifer
 
   // worst case. Time to create new 0/1 id file
-//  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 20)) {
- //   assert(false);  // FIXME: create new ID file
-  //}
+//  if ((2 * stmt.io.size() + 2 * stmt.attr.size() + id2pos.size()) > (1 << 19)) {
+//    assert(false);  // FIXME: create new ID file
+//  }
 
   stbuff->add8((stmt.type & 0xF) | ((stmt.sclass) << 4));
   stbuff->add8(stmt.type >> 4);
@@ -165,4 +167,5 @@ void Hif_write::add(const Statement &stmt) {
     add_attr(ent);
   }
   stbuff->add8(0xFF);  // END OF ATTRs
+  statements_written++;
 }

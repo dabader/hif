@@ -58,3 +58,37 @@ void Hif_base::Statement::dump() const {
   print_te("  io  ", io);
   print_te("  attr", attr);
 }
+
+std::ostream& operator<<(std::ostream& os, const Hif_base::Tuple_entry& entry) {
+    os << std::endl << "Tuple_entry { "
+       << "Input: " << (entry.input ? "true" : "false") << ", "
+       << "LHS: " << entry.lhs << ", "
+       << "RHS: " << entry.rhs << ", "
+       << "LHS Cat: " << ToString(entry.lhs_cat) << ", "
+       << "RHS Cat: " << ToString(entry.rhs_cat)
+       << " }";
+    return os;
+}
+
+
+
+std::ostream& operator<<(std::ostream& os, const Hif_base::Statement& stmt) {
+    // access and print the object's properties
+    os << "statement { "
+       << "class: " << ToString(stmt.sclass) << ", "
+       << "Type: " << std::hex << std::showbase << stmt.type << std::dec << ", "
+       << "Instance: " << stmt.instance << ", "
+       << "IO: [";
+    
+    for (const auto& io : stmt.io) {
+        os << io << ", ";
+    }
+
+    os << "], Attr: [";
+    for (const auto& attr : stmt.attr) {
+        os << attr << ", ";
+    }
+
+    os << "]}" << std::endl;
+    return os;
+}

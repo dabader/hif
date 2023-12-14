@@ -267,15 +267,15 @@ uint8_t *Hif_read::read_te(uint8_t *ptr, uint8_t *ptr_end, std::vector<Tuple_ent
     if (small) {
       ptr += 1;
     } else {
-      uint32_t pos2 = *(uint16_t *)(ptr + 1);
+      uint32_t pos2 = *(uint32_t *)(ptr + 1);
       pos2 <<= 5; // (8 - 3);  // 3 bits used for small + ee
       pos |= pos2;
-      ptr += 3;
+      ptr += 5;
     }
 
 
     if (pos >= pos2id.size()) {
-      std::cerr << "Hif_read corrupted st pos " << pos << " (aborting)\n";
+      std::cerr << "Hif_read corrupted st pos while reading te " << pos << " (aborting)\n";
       return ptr_end;
     }
 
@@ -348,7 +348,7 @@ uint8_t *Hif_read::read_header(uint8_t *ptr, uint8_t *ptr_end, Statement &stmt) 
     }
 
     if (pos >= pos2id.size()) {
-      std::cerr << "Hif_read corrupted instance pos " << pos << " (aborting)\n";
+      std::cerr << "Hif_read corrupted instance while reading header pos " << pos << " (aborting)\n";
       return ptr_end;
     }
     stmt.instance = pos2id[pos].txt;
@@ -358,8 +358,21 @@ uint8_t *Hif_read::read_header(uint8_t *ptr, uint8_t *ptr_end, Statement &stmt) 
 }
 
 bool Hif_read::next_stmt() {
-  if (ptr >= ptr_end)
-    return false;
+  if (ptr >= ptr_end) {
+		filepos++;
+ 		if(filepos >= idflist.size()) {
+			return false;
+		} else {
+			munmap(ptr_base, ptr_size);
+			close(ptr_fd);
+			read_idfile(idflist[filepos]);
+			std::tie(ptr_base, ptr_size, ptr_fd) = open_file(stflist[filepos]);
+			ptr     = ptr_base;
+			ptr_end = ptr_base + ptr_size;
+			std::cout << "Opening new file" << std::endl;
+
+		}
+	}
 
   cur_stmt = Statement();
 
@@ -377,6 +390,7 @@ void Hif_read::each(const std::function<void(const Statement &stmt)> fn) {
   while (next_stmt()) {
     fn(cur_stmt);
   }
+//	std::cout << "filepos:" << std::to_string(filepos) << std::endl;
 
   munmap(ptr_base, ptr_size);
   close(ptr_fd);
